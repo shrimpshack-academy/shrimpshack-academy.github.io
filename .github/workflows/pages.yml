@@ -1,0 +1,37 @@
+# Publishes ONLY the site/ folder to GitHub Pages every time something changes on the main branch.
+# The tests, server code and database files are never published.
+name: Publish website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safety check - no secret keys in the website
+        run: |
+          if grep -RInE "sb_secret_|service_role|SETUP_CODE *[:=] *['\"][^'\"]+" site/; then
+            echo "A secret appears in site/. Remove it - only the publishable key belongs in config.js."; exit 1
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
