@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live server tests</title>
+<style>
+  body{font:15px system-ui,sans-serif;margin:16px;background:#FBF7EF;color:#1B2433}
+  li{padding:4px 0} .ok{color:#1E7B4A} .bad{color:#B42318;font-weight:700} pre{white-space:pre-wrap;margin:2px 0 0 18px;color:#B42318}
+  #sum{font-size:20px;font-weight:800}
+</style>
+</head>
+<body>
+<h1>Live server file – tests</h1>
+<p>Loads the built <code>supabase/functions/academy/index.ts</code> with a stand-in for Supabase (Postgres + Storage) and calls it over "HTTP".</p>
+<div id="sum">Running…</div>
+<ul id="out"></ul>
+<script type="module">
+// ---- stand-in for supabase-js: just enough of the query builder used by server/edge.js
+const rows = new Map(); // 'coll/id' -> {coll,id,data}
+const calls = { db: 0 };
+const clone = v => JSON.parse(JSON.stringify(v));
+function contains(a, b) { return Object.entries(b).every(([k, v]) => JSON.stringify(a?.[k]) === JSON.stringify(v)); }
+function builder() {
+  const st = { filters: [], range: null, op: 'select', single: false, payload: null };
+  const run = async () => {
+    calls.db++;
+    let list = [...rows.values()].filter(r => st.filters.every(f => f(r)));
+    if (st.op === 'upsert') { const p = st.payload; rows.set(p.coll + '/' + p.id, clone(p)); return { data: null, error: null }; }
+    if (st.op === 'delete') { for (const r of list) rows.delete(r.coll + '/' + r.id); return { data: null, error: null }; }
+    list.sort((a, b) => a.id < b.id ? -1 : 1);
+    if (st.range) list = list.slice(st.range[0], st.range[1] + 1);
+    const data = list.map(r => ({ data: clone(r.data) }));
+    if (st.single) return { data: data[0] || null, error: null };
+    return { data, error: null };
+  };
+  const b = {
+    select() { return b; },
+    eq(col, v) { st.filters.push(r => r[col] === v); return b; },
+    contains(col, v) { st.filters.push(r => contains(r[col], v)); return b; },
+    order() { return b; },
+    range(a, z) { st.range = [a, z]; return b; },
+    maybeSingle() { st.single = true; return b; },
+    upsert(p) { st.op = 'upsert'; st.payload = p; return b; },
+    delete() { st.op = 'delete'; return b; },
+    then(res, rej) { return run().then(res, rej); }
+  };
+  return b;
+}
+const stored = new Set();
+window.__fakeSupabase = {
+  createClient: (url, key) => {
+    if (!url || !key) throw new Error('missing url/key');
+    return {
+      from: t => { if (t !== 'records') throw new Error('unexpected table ' + t); return builder(); },
+      storage: { from: bucket => ({
+        createSignedUploadUrl: async key => { stored.add(key); return { data: { signedUrl: `https://x.supabase.co/storage/v1/object/upload/sign/${bucket}/${key}?token=t` }, error: null }; },
+        createSignedUrl: async (key, s) => ({ data: { signedUrl: `https://x.supabase.co/storage/v1/object/sign/${bucket}/${key}?token=r&s=${s}` }, error: null }),
+        remove: async keys => { keys.forEach(k => stored.delete(k)); return { data: null, error: null }; }
+      }) }
+    };
+  }
+};
+const ENV = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'test-only', SETUP_CODE: 'edge-test-setup-code', ALLOWED_ORIGIN: 'https://academy.example.com/' };
+let handler;
+globalThis.Deno = { env: { get: k => ENV[k] }, serve: h => { handler = h; } };
+
+// ---- load the built function
+let src = await (await fetch('../supabase/functions/academy/index.ts', { cache: 'no-store' })).text();
+const importLine = src.match(/^import \{ createClient \} from 'npm:@supabase\/supabase-js@[\d.]+';$/m);
+src = src.replace(importLine[0], 'const { createClient } = window.__fakeSupabase;');
+await import(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+
+// ---- tiny test helpers
+const results = [];
+async function test(name, fn) { try { await fn(); results.push({ name, ok: true }); } catch (e) { results.push({ name, ok: false, err: e.message }); } }
+const ok = (v, m) => { if (!v) throw new Error(m || 'expected truthy'); };
+const ORIGIN = 'https://academy.example.com';
+// browsers refuse to let a page set the Origin header on a real Request, so use a plain stand-in
+const fakeReq = (method, h, body) => ({ method, headers: { get: k => h[k.toLowerCase()] ?? null }, text: async () => body });
+async function http(action, params, { token, origin = ORIGIN, method = 'POST', raw } = {}) {
+  const h = { 'content-type': 'application/json' };
+  if (origin) h.origin = origin;
+  if (token) h['x-session'] = token;
+  const res = await handler(fakeReq(method, h, method === 'POST' ? (raw ?? JSON.stringify({ action, params })) : ''));
+  const text = await res.text();
+  return { status: res.status, headers: res.headers, body: text ? JSON.parse(text) : null };
+}
+const must = async (a, p, o) => { const r = await http(a, p, o); if (!r.body?.ok) throw new Error(`${a}: ${r.status} ${r.body?.error}`); return r.body.data; };
+
+await test('built file has an import line and loads', () => { ok(importLine, 'import line'); ok(typeof handler === 'function', 'Deno.serve was called'); });
+await test('only the allowed website address is accepted', async () => {
+  const bad = await http('system.status', {}, { origin: 'https://evil.example' });
+  ok(bad.status === 403 && bad.body.error === 'origin_not_allowed', 'other site refused');
+  const none = await http('system.status', {}, { origin: '' });
+  ok(none.status === 403, 'no origin refused');
+  const pre = await handler(fakeReq('OPTIONS', { origin: ORIGIN }, ''));
+  ok(pre.status === 204 && pre.headers.get('access-control-allow-origin') === ORIGIN && /x-session/.test(pre.headers.get('access-control-allow-headers')), 'preflight');
+  const preBad = await handler(fakeReq('OPTIONS', { origin: 'https://evil.example' }, ''));
+  ok(preBad.status === 403 && preBad.headers.get('access-control-allow-origin') !== 'https://evil.example', 'evil preflight');
+});
+await test('bad requests are refused cleanly', async () => {
+  ok((await http(null, null, { method: 'GET' })).status === 405, 'GET');
+  ok((await http(null, null, { raw: '{not json' })).status === 400, 'bad json');
+  ok((await http(null, null, { raw: 'x'.repeat(2_000_001) })).status === 413, 'too large');
+  const r = await http('nope', {}); ok(r.status === 404 && r.body.error === 'unknown_action', 'unknown action');
+  ok((await http('people.list', {})).status === 401, 'needs sign-in');
+});
+await test('first run, sign-in and data saved in the database table', async () => {
+  ok((await must('system.status', {})).initialized === false, 'not initialized');
+  ok((await http('setup.init', { code: 'wrong', email: 'owner@example.com', password: 'Very-long-admin-pass-1' })).status === 403, 'wrong code');
+  const s = await must('setup.init', { code: 'edge-test-setup-code', email: 'owner@example.com', name: 'Owner', password: 'Very-long-admin-pass-1' });
+  ok(s.token && !('pw' in s.user), 'token, no hash');
+  ok([...rows.keys()].some(k => k.startsWith('users/')) && rows.get('system/main').data.signKey, 'rows stored');
+  ok(!JSON.stringify(rows.get('locks/#setup') || {}).includes('until":1'), 'setup lock cleared');
+  const l = await must('auth.login', { id: 'owner@example.com', password: 'Very-long-admin-pass-1' });
+  ok(l.token, 'login');
+  window.__tok = l.token;
+});
+await test('full flow over HTTP: course, PDF upload link, card, quiz, certificate', async () => {
+  const token = window.__tok;
+  const b = await must('org.saveBranch', { name: 'B01 - HITTIN' }, { token });
+  await must('people.save', { name: 'Test Staff', code: '9001', role: 'staff', branchId: b.id, password: 'temp-pass', mustChange: false }, { token });
+  const c = await must('courses.save', { title: 'General Induction', passMark: 50, attemptLimit: 3 }, { token });
+  const sec = await must('sections.save', { courseId: c.id, title: 'Welcome', quiz: { questions: [{ type: 'tf', text: 'Smile at guests', answer: 0 }] } }, { token });
+  const prep = await must('cards.prepareUpload', { courseId: c.id, size: 1000, type: 'application/pdf' }, { token });
+  ok(prep.target.kind === 'signed' && prep.target.url.startsWith('https://x.supabase.co/storage/v1/object/upload/sign/cards/cards/'), 'signed upload link');
+  ok((await http('cards.prepareUpload', { courseId: c.id, size: 30e6, type: 'application/pdf' }, { token })).body.error === 'file_too_large', '20 MB limit');
+  const card = await must('cards.create', { sectionId: sec.id, title: 'Hello', key: prep.key, order: 1 }, { token });
+  await must('courses.publish', { id: c.id }, { token });
+  await must('assign.create', { courseId: c.id, targetType: 'branch', targetId: b.id }, { token });
+  const st = (await must('auth.login', { id: '9001', password: 'temp-pass' })).token;
+  const home = await must('learn.home', {}, { token: st }); ok(home.courses.length === 1, 'assigned course visible');
+  const open = await must('learn.openCard', { cardId: card.id }, { token: st });
+  ok(open.url.includes('/object/sign/cards/') && open.url.includes('s=300'), '5-minute read link');
+  ok((await http('learn.completeCard', { cardId: card.id }, { token: st })).body.error === 'too_fast', 'minimum time enforced');
+  // pretend the card was opened 10 s ago
+  const o = [...rows.values()].find(r => r.coll === 'opens'); o.data.at -= 10000;
+  await must('learn.completeCard', { cardId: card.id }, { token: st });
+  const q = await must('quiz.start', { courseId: c.id, target: sec.id }, { token: st });
+  ok(!JSON.stringify(q).includes('"answer"'), 'no answers sent');
+  const r = await must('quiz.submit', { attemptId: q.attemptId, answers: { [q.questions[0].id]: q.questions[0].options.indexOf('true') } }, { token: st });
+  ok(r.passed && r.cert?.number?.startsWith('SSA-'), 'certificate issued');
+  const v = await must('certs.verify', { number: r.cert.number }, { origin: ORIGIN });
+  ok(v.found && v.initials === 'T. S.', 'public check shows initials only');
+  ok((await http('people.list', {}, { token: st })).status === 403, 'staff cannot list people');
+});
+await test('backup export never contains password hashes or the signing key', async () => {
+  const b = await must('backup.export', {}, { token: window.__tok });
+  const s = JSON.stringify(b); ok(!s.includes('"pw"') && !s.includes('signKey') && !s.includes('"hash"'), 'clean');
+});
+await test('responses are not cached and keep JSON type', async () => {
+  const r = await http('system.status', {});
+  ok(r.headers.get('cache-control') === 'no-store' && r.headers.get('x-content-type-options') === 'nosniff', 'headers');
+});
+
+const out = document.getElementById('out');
+for (const r of results) {
+  const li = document.createElement('li'); li.className = r.ok ? 'ok' : 'bad'; li.textContent = (r.ok ? '✔ ' : '✘ ') + r.name;
+  if (!r.ok) { const p = document.createElement('pre'); p.textContent = r.err; li.append(p); }
+  out.append(li);
+}
+const failed = results.filter(r => !r.ok).length;
+document.getElementById('sum').textContent = `${results.length - failed} passed, ${failed} failed · database calls: ${calls.db}`;
+window.__results = results;
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shrimp Shack Academy – Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lato:wght@400;700;900&family=Tajawal:wght@400;500;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Brand (sampled from the Shrimp Shack guideline) */
+  --brand-blue:#005397; --brand-blue-700:#003F73; --brand-orange:#F0542B; --brand-yellow:#F3D410;
+  /* Light theme tokens */
+  --bg:#FBF7EF; --surface:#FFFFFF; --surface-2:#F3EDE1; --ink:#1B2433; --muted:#5B6472; --line:#E4DCCD;
+  --primary:var(--brand-blue); --primary-ink:#FFFFFF; --accent:#C2410C; --accent-ink:#FFFFFF;
+  --accent-deco:var(--brand-orange); --highlight:var(--brand-yellow);
+  --ok:#1E7B4A; --warn:#8A5A00; --danger:#B42318; --focus:#F3D410;
+  --radius:14px; --shadow:0 1px 2px rgba(27,36,51,.06),0 4px 14px rgba(27,36,51,.07);
+  --font-display:"Bebas Neue","Tajawal",sans-serif; --font-body:"Lato","Tajawal",system-ui,sans-serif;
+}
+:root[data-theme="dark"]{
+  --bg:#0B1A2C; --surface:#11263E; --surface-2:#173250; --ink:#F4EFE6; --muted:#A9B4C3; --line:#24405F;
+  --primary:#4FA3E8; --primary-ink:#06182B; --accent:#FF7A50; --accent-ink:#1A0A03;
+  --accent-deco:#FF6A3D; --ok:#5BD08F; --warn:#F3C64B; --danger:#FF8A80;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.35);
+}
+:root[lang="ar"]{ --font-display:"Tajawal",sans-serif; --font-body:"Tajawal",system-ui,sans-serif; }
+:root[lang="ur"]{ --font-display:"Noto Nastaliq Urdu","Tajawal",serif; --font-body:"Noto Nastaliq Urdu","Tajawal",serif; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.55}
+:root[lang="ur"] body{line-height:2.1}
+a{color:var(--primary)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 48px}
+header.top{position:sticky;top:0;z-index:5;background:var(--brand-blue);color:#fff}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-top:10px;padding-bottom:10px}
+.mark{display:flex;align-items:center;gap:10px;font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:.5px;line-height:1}
+.mark small{display:block;font-family:"Tajawal",sans-serif;font-size:13px;font-weight:700;letter-spacing:0;opacity:.9}
+.mark .dot{width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center}
+.spacer{flex:1}
+@media (max-width:520px){
+  .mark{font-size:20px;gap:8px}.mark small{display:none}.mark .dot{width:32px;height:32px}
+  .toolbar{gap:4px}.chip-btn{padding:0 8px;font-size:13px}
+}
+.toolbar{display:flex;gap:8px}
+.chip-btn{min-height:44px;min-width:44px;padding:0 12px;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:transparent;color:#fff;font:700 14px var(--font-body);cursor:pointer}
+.chip-btn[aria-pressed="true"]{background:#fff;color:var(--brand-blue)}
+.wave{height:14px;background:
+  radial-gradient(circle at 10px -4px,transparent 10px,var(--brand-yellow) 11px,var(--brand-yellow) 13px,transparent 14px) 0 0/20px 14px repeat-x;}
+h1,h2,h3{font-family:var(--font-display);font-weight:800;line-height:1.1;margin:0 0 .4em}
+:root[lang="en"] h1,:root[lang="en"] h2{font-weight:400;letter-spacing:.5px}
+h1{font-size:clamp(34px,7vw,56px);margin-top:28px}
+h2{font-size:clamp(24px,4.5vw,32px);margin-top:36px;padding-bottom:6px;border-bottom:3px solid var(--accent-deco);display:inline-block}
+:root[lang="ur"] h1,:root[lang="ur"] h2{line-height:1.9}
+p.lead{color:var(--muted);max-width:62ch;margin-top:0}
+.grid{display:grid;gap:14px}
+.swatches{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.sw{border-radius:var(--radius);overflow:hidden;background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--line)}
+.sw .c{height:84px}
+.sw .t{padding:10px 12px;font-size:13px}
+.sw b{display:block;font-size:14px}
+.sw code{font-size:12.5px;color:var(--muted)}
+.type{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+:root[lang="ar"] .label,:root[lang="ur"] .label{letter-spacing:0;text-transform:none}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{min-height:48px;padding:0 20px;border-radius:12px;border:2px solid transparent;font:700 16px var(--font-body);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--primary);color:var(--primary-ink)}
+.btn-accent{background:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;box-shadow:0 0 0 5px var(--brand-blue)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.b-ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.b-warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.b-danger{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+.b-new{background:var(--highlight);color:#1B2433}
+.demo{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:start}
+.course{overflow:hidden;padding:0}
+.course .hero{height:110px;background:linear-gradient(135deg,var(--brand-blue),#0A6CC0);position:relative}
+.course .hero::after{content:"";position:absolute;inset:auto 0 0 0;height:14px;background:radial-gradient(circle at 10px -4px,transparent 10px,var(--brand-yellow) 11px,var(--brand-yellow) 13px,transparent 14px) 0 0/20px 14px repeat-x}
+.course .body{padding:16px}
+.bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;width:62%;background:var(--accent-deco);border-radius:99px}
+:root[dir="rtl"] .bar i{margin-inline-start:auto}
+.viewer .page{aspect-ratio:3/4;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;color:var(--muted);border:1px dashed var(--line);margin:10px 0}
+.viewer .nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.timer{font-size:14px;color:var(--muted)}
+.icon{width:20px;height:20px}
+:root[dir="rtl"] .icon.dir{transform:scaleX(-1)}
+.opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 14px;border:2px solid var(--line);border-radius:12px;margin-top:10px;cursor:pointer;background:var(--surface)}
+.opt.sel{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--surface))}
+.opt .r{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);flex:none}
+.opt.sel .r{border:6px solid var(--primary)}
+.cert{background:#fff;color:#1B2433;border-radius:var(--radius);border:6px solid var(--brand-blue);padding:22px;position:relative;text-align:center;box-shadow:var(--shadow)}
+.cert::before{content:"";position:absolute;inset:6px;border:2px dashed var(--brand-orange);border-radius:8px;pointer-events:none}
+.cert .t1{font-family:"Bebas Neue",sans-serif;font-size:30px;color:var(--brand-blue);letter-spacing:1px}
+.cert .who{font-size:22px;font-weight:900;margin:6px 0}
+.cert .meta{display:flex;justify-content:space-between;font-size:12px;color:#5B6472;margin-top:12px}
+.qr{width:46px;height:46px;background:repeating-conic-gradient(#1B2433 0 25%,#fff 0 50%) 0 0/12px 12px;border:3px solid #fff;outline:1px solid #1B2433}
+table.tok{width:100%;border-collapse:collapse;font-size:14px}
+table.tok td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tok td:first-child{font-weight:700;white-space:nowrap}
+.note{font-size:14px;color:var(--muted)}
+footer{margin-top:40px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="mark">
+      <span class="dot" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="26" height="26"><path d="M7 20c0-7 6-12 13-11 4 .6 6 3 6 6 0 4-4 7-8 6m-4-11c-1-2-3-3-6-3m6 5c-2-1-4-1-6 0" fill="none" stroke="#F0542B" stroke-width="2.6" stroke-linecap="round"/><path d="M11 21l-3 5m7-4l-1 5" stroke="#F0542B" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </span>
+      <span><span data-i="brand">SHRIMP SHACK ACADEMY</span><small>أكاديمية شرمبشاك</small></span>
+    </div>
+    <div class="spacer"></div>
+    <div class="toolbar" role="group" aria-label="Language and theme">
+      <button class="chip-btn" data-lang="en" aria-pressed="true">EN</button>
+      <button class="chip-btn" data-lang="ar" aria-pressed="false">ع</button>
+      <button class="chip-btn" data-lang="ur" aria-pressed="false">اردو</button>
+      <button class="chip-btn" id="theme" aria-pressed="false" aria-label="Dark theme">☾</button>
+    </div>
+  </div>
+  <div class="wave" aria-hidden="true"></div>
+</header>
+
+<main class="wrap">
+  <h1 data-i="title">Design system</h1>
+  <p class="lead" data-i="lead">Built from the Shrimp Shack brand guideline: deep sea blue, shrimp orange and sunny yellow on a warm paper background. Please review and approve before we build the screens.</p>
+
+  <h2 data-i="colours">Colours</h2>
+  <div class="grid swatches">
+    <div class="sw"><div class="c" style="background:#005397"></div><div class="t"><b>Shack Blue</b><code>#005397</code><br><span data-i="useBlue">Header, primary buttons, links</span></div></div>
+    <div class="sw"><div class="c" style="background:#F0542B"></div><div class="t"><b>Shrimp Orange</b><code>#F0542B</code><br><span data-i="useOrange">Icons, progress, highlights</span></div></div>
+    <div class="sw"><div class="c" style="background:#C2410C"></div><div class="t"><b>Orange (text-safe)</b><code>#C2410C</code><br><span data-i="useOrange2">Accent buttons with white text</span></div></div>
+    <div class="sw"><div class="c" style="background:#F3D410"></div><div class="t"><b>Sunny Yellow</b><code>#F3D410</code><br><span data-i="useYellow">Wave pattern, "new" badges, focus ring</span></div></div>
+    <div class="sw"><div class="c" style="background:#FBF7EF"></div><div class="t"><b>Paper</b><code>#FBF7EF</code><br><span data-i="usePaper">Page background (light)</span></div></div>
+    <div class="sw"><div class="c" style="background:#1B2433"></div><div class="t"><b>Ink</b><code>#1B2433</code><br><span data-i="useInk">Body text</span></div></div>
+    <div class="sw"><div class="c" style="background:#0B1A2C"></div><div class="t"><b>Night Sea</b><code>#0B1A2C</code><br><span data-i="useNight">Dark theme background</span></div></div>
+  </div>
+  <p class="note" data-i="contrastNote">Note: white text on the bright brand orange is hard to read on phones, so buttons use the deeper orange #C2410C. The bright orange stays for icons, progress bars and decoration.</p>
+
+  <h2 data-i="type">Fonts</h2>
+  <div class="grid type">
+    <div class="card"><div class="label">English · Headings</div><div style="font-family:'Bebas Neue';font-size:40px;line-height:1">SHACK MIX TRAINING</div><p class="note">Bebas Neue (free), closest free match to the brand's Microbrew Unicase.</p></div>
+    <div class="card"><div class="label">English · Text</div><div style="font-family:Lato;font-size:18px">Peel, season and serve in under 6 minutes.</div><p class="note">Lato is the brand's own font, and it is free.</p></div>
+    <div class="card" dir="rtl"><div class="label">العربية</div><div style="font-family:Tajawal;font-size:24px;font-weight:800">روبيان مقشر بالكاجون</div><div style="font-family:Tajawal;font-size:17px">قشّر وتبّل وقدّم خلال ٦ دقائق.</div><p class="note">Tajawal (مجاني)، أقرب بديل لخطَّي DIN Next Arabic وJF Flat.</p></div>
+    <div class="card" dir="rtl"><div class="label">اردو</div><div style="font-family:'Noto Nastaliq Urdu';font-size:20px;line-height:2.1">چھیلیں، مصالحہ لگائیں اور پیش کریں</div><p class="note">Noto Nastaliq Urdu (free): the familiar Urdu script for staff.</p></div>
+  </div>
+
+  <h2 data-i="components">Components</h2>
+  <div class="card" style="margin-bottom:14px">
+    <div class="label" data-i="buttons">Buttons</div>
+    <div class="btns">
+      <button class="btn btn-primary" data-i="start">Start training</button>
+      <button class="btn btn-accent" data-i="takeQuiz">Take the quiz</button>
+      <button class="btn btn-ghost" data-i="later">Later</button>
+      <button class="btn btn-primary" disabled data-i="locked">Locked</button>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <span class="badge b-ok" data-i="passed">Passed</span>
+      <span class="badge b-warn" data-i="dueSoon">Due soon</span>
+      <span class="badge b-danger" data-i="overdue">Overdue</span>
+      <span class="badge b-new" data-i="new">New</span>
+    </div>
+  </div>
+
+  <div class="grid demo">
+    <div class="card course">
+      <div class="hero"></div>
+      <div class="body">
+        <div class="label" data-i="course">Course</div>
+        <h3 style="font-size:24px" data-i="courseName">General Induction</h3>
+        <div class="bar"><i></i></div>
+        <div class="note" data-i="progress">5 of 8 sections · due in 4 days</div>
+        <div style="margin-top:12px"><button class="btn btn-primary" data-i="continue">Continue</button></div>
+      </div>
+    </div>
+
+    <div class="card viewer">
+      <div class="nav">
+        <strong data-i="cardOf">Card 3 of 12</strong>
+        <span class="timer" data-i="wait">Next in 5s</span>
+      </div>
+      <div class="page" data-i="pdf">PDF card</div>
+      <div class="nav">
+        <button class="btn btn-ghost" aria-label="Previous"><svg class="icon dir" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span data-i="prev">Back</span></button>
+        <button class="btn btn-primary" disabled><span data-i="next">Next</span><svg class="icon dir" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label" data-i="quiz">Section quiz · question 2 of 10</div>
+      <strong data-i="q">What temperature must cooked shrimp reach?</strong>
+      <div class="opt"><span class="r"></span><span>55°C</span></div>
+      <div class="opt sel"><span class="r"></span><span>63°C</span></div>
+      <div class="opt"><span class="r"></span><span>40°C</span></div>
+    </div>
+
+    <div class="cert">
+      <div class="t1" data-i="certT">CERTIFICATE OF COMPLETION</div>
+      <div class="note" style="color:#5B6472" data-i="certSub">This certifies that</div>
+      <div class="who" data-i="certWho">Employee name</div>
+      <div data-i="certCourse">has completed General Induction</div>
+      <div class="meta"><span>SSA-2026-00012</span><span class="qr" aria-label="QR code"></span><span>17 Nov 2026</span></div>
+    </div>
+  </div>
+
+  <h2 data-i="rules">Design rules</h2>
+  <table class="tok">
+    <tr><td data-i="r1a">Phone first</td><td data-i="r1b">Tap targets at least 44px, one task per screen, bottom navigation on phones.</td></tr>
+    <tr><td data-i="r2a">3 languages</td><td data-i="r2b">English (left-to-right), Arabic and Urdu (right-to-left). Arrows and layout mirror automatically.</td></tr>
+    <tr><td data-i="r3a">Themes</td><td data-i="r3b">Light by default. The dark switch sits next to the language buttons.</td></tr>
+    <tr><td data-i="r4a">Brand motif</td><td data-i="r4b">Yellow wave line from the menu under headers and course covers, used sparingly.</td></tr>
+    <tr><td data-i="r5a">Corners and shadows</td><td data-i="r5b">Rounded 14px cards, soft shadows, warm paper background.</td></tr>
+  </table>
+  <footer data-i="foot">Preview only: no real data. Colours sampled from the brand guideline, so please share official codes if you have them.</footer>
+</main>
+
+<script>
+const T={
+ ar:{brand:"أكاديمية شرمبشاك",title:"نظام التصميم",lead:"مبني على دليل هوية شرمبشاك: أزرق البحر وبرتقالي الروبيان والأصفر المشمس على خلفية ورقية دافئة. راجعه ووافق عليه قبل أن نبني الشاشات.",colours:"الألوان",type:"الخطوط",components:"المكوّنات",buttons:"الأزرار",start:"ابدأ التدريب",takeQuiz:"ابدأ الاختبار",later:"لاحقًا",locked:"مقفل",passed:"ناجح",dueSoon:"قريب الاستحقاق",overdue:"متأخر",new:"جديد",course:"دورة",courseName:"التعريف العام",progress:"٥ من ٨ أقسام · متبقٍ ٤ أيام",continue:"متابعة",cardOf:"البطاقة ٣ من ١٢",wait:"التالي بعد ٥ ث",pdf:"بطاقة PDF",prev:"السابق",next:"التالي",quiz:"اختبار القسم · السؤال ٢ من ١٠",q:"ما درجة الحرارة التي يجب أن يصل إليها الروبيان المطبوخ؟",certT:"شهادة إتمام",certSub:"نشهد بأن",certWho:"اسم الموظف",certCourse:"أتم دورة التعريف العام",rules:"قواعد التصميم",r1a:"الجوال أولًا",r1b:"أزرار لا تقل عن ٤٤ بكسل، ومهمة واحدة في كل شاشة، وقائمة سفلية على الجوال.",r2a:"٣ لغات",r2b:"الإنجليزية من اليسار لليمين، والعربية والأردية من اليمين لليسار، مع عكس الأسهم والتخطيط تلقائيًا.",r3a:"المظهر",r3b:"فاتح افتراضيًا، وزر الوضع الداكن بجانب أزرار اللغة.",r4a:"عنصر الهوية",r4b:"خط الموجة الأصفر من المنيو تحت الترويسة وأغلفة الدورات، باعتدال.",r5a:"الزوايا والظلال",r5b:"بطاقات بزوايا ١٤ بكسل، وظلال ناعمة، وخلفية ورقية دافئة.",foot:"معاينة فقط بدون بيانات حقيقية. الألوان مأخوذة من دليل الهوية، فإن كانت لديك الأكواد الرسمية فأرسلها.",contrastNote:"ملاحظة: النص الأبيض على البرتقالي الفاتح صعب القراءة على الجوال، لذلك تستخدم الأزرار البرتقالي الأغمق #C2410C، ويبقى البرتقالي الفاتح للأيقونات وأشرطة التقدم والزينة.",useBlue:"الترويسة والأزرار الرئيسية والروابط",useOrange:"الأيقونات وأشرطة التقدم والتمييز",useOrange2:"أزرار ثانوية بنص أبيض",useYellow:"الموجة وشارة «جديد» وإطار التركيز",usePaper:"خلفية الصفحة (فاتح)",useInk:"لون النص",useNight:"خلفية الوضع الداكن"},
+ ur:{brand:"شرمپ شیک اکیڈمی",title:"ڈیزائن سسٹم",lead:"شرمپ شیک برانڈ گائیڈ لائن سے تیار: گہرا نیلا، جھینگا نارنجی اور دھوپ جیسا پیلا۔",colours:"رنگ",type:"فونٹس",components:"اجزاء",buttons:"بٹن",start:"تربیت شروع کریں",takeQuiz:"کوئز دیں",later:"بعد میں",locked:"مقفل",passed:"کامیاب",dueSoon:"جلد مقررہ",overdue:"تاخیر",new:"نیا",course:"کورس",courseName:"عمومی تعارف",progress:"8 میں سے 5 حصے · 4 دن باقی",continue:"جاری رکھیں",cardOf:"کارڈ 3 از 12",wait:"اگلا 5 سیکنڈ میں",pdf:"PDF کارڈ",prev:"پیچھے",next:"اگلا",quiz:"حصے کا کوئز · سوال 2 از 10",q:"پکے ہوئے جھینگے کا درجہ حرارت کتنا ہونا چاہیے؟",certT:"تکمیل کی سند",certSub:"تصدیق کی جاتی ہے کہ",certWho:"ملازم کا نام",certCourse:"نے عمومی تعارف مکمل کیا",rules:"ڈیزائن کے اصول",foot:"صرف نمونہ، کوئی حقیقی ڈیٹا نہیں۔"}
+};
+const EN={};document.querySelectorAll('[data-i]').forEach(e=>EN[e.dataset.i]=e.textContent);
+function setLang(l){
+  const d=document.documentElement;d.lang=l;d.dir=l==='en'?'ltr':'rtl';
+  document.querySelectorAll('[data-i]').forEach(e=>{const k=e.dataset.i;e.textContent=(l==='en'?EN[k]:(T[l][k]||EN[k]));});
+  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===l));
+}
+document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+const th=document.getElementById('theme');
+th.onclick=()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';th.setAttribute('aria-pressed',dark);th.textContent=dark?'☀':'☾';};
+document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{document.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));o.classList.add('sel')});
+</script>
+</body>
+</html>

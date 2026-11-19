@@ -1,0 +1,12 @@
+{
+  "name": "Shrimp Shack Academy",
+  "short_name": "SS Academy",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FBF7EF",
+  "theme_color": "#005397",
+  "icons": [
+    { "src": "assets/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

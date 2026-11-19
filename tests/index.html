@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academy tests</title>
+<style>
+  body{font:15px system-ui,sans-serif;margin:16px;background:#FBF7EF;color:#1B2433}
+  li{padding:4px 0} .ok{color:#1E7B4A} .bad{color:#B42318;font-weight:700} pre{white-space:pre-wrap;margin:2px 0 0 18px;color:#B42318}
+  #sum{font-size:20px;font-weight:800}
+</style>
+</head>
+<body>
+<h1>Shrimp Shack Academy – automated tests</h1>
+<div id="sum">Running…</div>
+<ul id="out"></ul>
+<script type="module">
+  import { run } from './core.test.js';
+  const t0 = performance.now();
+  const res = await run();
+  const out = document.getElementById('out');
+  for (const r of res) {
+    const li = document.createElement('li'); li.className = r.ok ? 'ok' : 'bad';
+    li.textContent = (r.ok ? '✔ ' : '✘ ') + r.name;
+    if (!r.ok) { const p = document.createElement('pre'); p.textContent = r.err; li.append(p); }
+    out.append(li);
+  }
+  const failed = res.filter(r => !r.ok).length;
+  document.getElementById('sum').textContent = `${res.length - failed} passed, ${failed} failed (${Math.round(performance.now() - t0)} ms)`;
+  window.__results = res;
+</script>
+</body>
+</html>

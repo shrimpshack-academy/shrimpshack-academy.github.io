@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Shrimp Shack">
+  <!-- Placeholder mark. Replace with the official Shrimp Shack logo (same file name). -->
+  <circle cx="32" cy="32" r="31" fill="#fff" stroke="#005397" stroke-width="2"/>
+  <path d="M15 40c0-13 11-22 25-20 7 1 11 6 11 11 0 8-7 13-15 11" fill="none" stroke="#F0542B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M27 21c-2-4-6-6-11-6m11 10c-4-2-8-2-12 0" fill="none" stroke="#F0542B" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 42l-5 9m13-7l-2 9m10-10l1 8" stroke="#F0542B" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="44" cy="27" r="2.6" fill="#005397"/>
+</svg>
