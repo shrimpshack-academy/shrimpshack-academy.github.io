@@ -168,6 +168,25 @@ export function parseCardName(fileName) {
   return m ? { order: Number(m[1]), title: (m[2] || base).replace(/_+/g, ' ').trim() || base } : { order: null, title: base.replace(/_+/g, ' ') };
 }
 
+// Pasted quiz text -> questions.   Q: question   /  - wrong option  /  * correct option
+// Questions need 2+ options and exactly one "*". Anything else is skipped.
+export function parseQuizText(text) {
+  const out = []; let cur = null;
+  const done = () => {
+    if (cur && cur.text && cur.options.length >= 2 && cur.correct.length === 1) out.push({ type: 'mc', text: cur.text, options: cur.options, answer: cur.correct[0] });
+    cur = null;
+  };
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const line = raw.trim(); if (!line) continue;
+    let m;
+    if ((m = line.match(/^(?:Q\s*\d*\s*[:.)-]|س\s*[:.)-])\s*(.+)$/i))) { done(); cur = { text: m[1].trim(), options: [], correct: [] }; }
+    else if (cur && (m = line.match(/^([*+✓✔-])\s*(.+)$/))) { if (m[1] !== '-') cur.correct.push(cur.options.length); cur.options.push(m[2].trim()); }
+    else if (cur && !cur.options.length) cur.text += ' ' + line;
+  }
+  done();
+  return out.slice(0, 100);
+}
+
 const loaded = {};
 export function loadScript(src) {
   return (loaded[src] ||= new Promise((res, rej) => {

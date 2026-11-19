@@ -2,7 +2,7 @@
 // the UI only hides what the person cannot use.
 import { call, upload, MODE, TRIAL_SETUP_CODE, getToken, setToken, prefs, resetTrial } from './api.js';
 import { t, setLang, lang, LANGS } from './i18n.js';
-import { h, clear, icon, btn, toast, showError, errText, modal, confirmBox, field, input, select, fmtDate, toCSV, parseCSV, download, loadScript, CDN, parseCardName } from './ui.js';
+import { h, clear, icon, btn, toast, showError, errText, modal, confirmBox, field, input, select, fmtDate, toCSV, parseCSV, download, loadScript, CDN, parseCardName, parseQuizText } from './ui.js';
 import { canGiveRole, ROLES, AREA_PERMS, RANK } from './core.js';
 
 const cfg = window.APP_CONFIG || {};
@@ -709,7 +709,20 @@ async function quizEditor(questions, save) {
       wrap.append(h('div', { class: 'card q-edit' }, h('div', { class: 'row-between' }, h('strong', null, t('qe.question', { n: i + 1 })), h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('remove'), onclick: () => { qs.splice(i, 1); draw(); } }, icon('x'))),
         field(t('qe.type'), type), field(t('qe.text'), text), optsField, field(t('qe.answer'), ans)));
     });
-    wrap.append(btn([icon('plus'), t('qe.add')], () => { qs.push({ type: 'mc', text: '', options: [], answer: 0 }); draw(); }, 'btn-ghost'));
+    wrap.append(h('div', { class: 'actions' },
+      btn([icon('plus'), t('qe.add')], () => { qs.push({ type: 'mc', text: '', options: [], answer: 0 }); draw(); }, 'btn-ghost'),
+      btn(t('qe.paste'), pasteQuestions, 'btn-ghost')));
+  };
+  const pasteQuestions = async () => {
+    const area = h('textarea', { rows: 12, dir: 'auto', placeholder: 'Q: Question text\n- wrong answer\n* correct answer\n- wrong answer' });
+    const box = h('div', null, h('p', { class: 'muted' }, t('qe.pasteHint')), area);
+    let added = 0;
+    await modal(t('qe.paste'), box, [{ label: t('cancel'), value: null }, { label: t('qe.paste'), submit: true }], { onSubmit: () => {
+      const r = parseQuizText(area.value);
+      if (!r.length) { toast(t('qe.pasteNone'), 'error'); return false; }
+      qs.push(...r); added = r.length; return true;
+    } });
+    if (added) { draw(); toast(t('qe.pasted', { n: added })); }
   };
   qs = qs.map(q => ({ ...q })); draw();
   await modal(t('qe.title'), wrap, [{ label: t('cancel'), value: null }, { label: t('save'), submit: true }], { wide: true, onSubmit: async () => {
