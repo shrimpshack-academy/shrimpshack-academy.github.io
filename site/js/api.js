@@ -37,7 +37,9 @@ export async function call(action, params = {}) {
   } else {
     let res;
     try {
-      res = await fetch(`${cfg.supabaseUrl.replace(/\/$/, '')}/functions/v1/${cfg.functionName || 'academy'}`, {
+      // forceFunctionRegion: run next to the database instead of the nearest edge (each DB read stays local)
+      const region = cfg.functionRegion ? `?forceFunctionRegion=${encodeURIComponent(cfg.functionRegion)}` : '';
+      res = await fetch(`${cfg.supabaseUrl.replace(/\/$/, '')}/functions/v1/${cfg.functionName || 'academy'}${region}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', apikey: cfg.publishableKey, ...(getToken() ? { 'x-session': getToken() } : {}) },
         body: JSON.stringify({ action, params })

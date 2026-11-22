@@ -20,17 +20,19 @@ const pct = v => (v == null ? '—' : v + '%');
 // ------------------------------------------------------------------ boot
 async function boot() {
   applyTheme(prefs.get('ssa.theme') || 'light');
+  const me = getToken() ? loadMe() : null; // sign-in check runs at the same time as the status check
   try { S.status = await call('system.status'); } catch (e) { S.status = { initialized: true, mode: MODE, defaultLang: 'en', error: e }; }
   setLang(prefs.get('ssa.lang') || S.status.defaultLang || cfg.defaultLang || 'en');
-  if (getToken()) await loadMe();
+  if (me) { await me; if (!prefs.get('ssa.lang') && S.me?.lang) setLang(S.me.lang); }
   window.addEventListener('hashchange', render);
   render();
 }
 async function loadMe() {
   try {
+    const orgP = call('org.list').catch(() => null); // may fail during a forced password change
     const r = await call('auth.me'); S.me = r.user; S.perms = new Set(r.perms);
     if (!prefs.get('ssa.lang') && S.me.lang) setLang(S.me.lang);
-    try { S.org = await call('org.list'); } catch { /* may be in forced password change */ }
+    S.org = (await orgP) || S.org;
   } catch { S.me = null; S.perms = new Set(); setToken(null); }
 }
 function applyTheme(th) {
@@ -109,6 +111,7 @@ async function render() {
     dashboard: dashboardView, people: peopleView, import: importView, org: orgView, courses: coursesView, edit: courseEditView,
     assign: assignView, signoffs: signoffView, settings: settingsView, audit: auditView, profile: profileView, help: helpView
   };
+  if (route !== 'viewer') { VC.data = null; VC.next = null; } // leaving the viewer: always show fresh progress
   const v = views[route] || homeView;
   await safe(() => v(m, ...args.map(decodeURIComponent)));
   done(m);
@@ -243,8 +246,12 @@ async function courseView(m, id) {
   m.append(h('p', { class: 'meta' }, rules.join(' · ')));
 }
 
+// The viewer keeps the course outline while moving card to card, and downloads the next card in the background.
+const VC = { courseId: null, data: null, next: null };
+const fetchBytes = url => fetch(url).then(r => { if (!r.ok) throw new Error('pdf ' + r.status); return r.arrayBuffer(); });
 async function viewerView(m, courseId, sectionId, idxStr) {
-  const d = await call('learn.course', { courseId });
+  if (VC.courseId !== courseId || !VC.data) { VC.data = await call('learn.course', { courseId }); VC.courseId = courseId; VC.next = null; }
+  const d = VC.data;
   const sec = d.sections.find(s => s.id === sectionId); if (!sec) return go('/course/' + courseId);
   const list = sec.cardList; const idx = Math.min(Math.max(0, Number(idxStr) || 0), list.length - 1); const card = list[idx];
   let zoom = 1;
@@ -259,13 +266,17 @@ async function viewerView(m, courseId, sectionId, idxStr) {
       h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('viewer.zoomIn'), onclick: () => { zoom = Math.min(3, zoom + 0.2); draw(); } }, icon('plus')))),
   h('h1', { class: 'card-title' }, card.title), stage, h('div', { class: 'viewer-nav' }, prevBtn, timer, nextBtn));
 
-  const o = await call('learn.openCard', { cardId: card.id });
+  // Always tell the server this card is open now (this starts the minimum-time clock), even if its file is already downloaded.
+  const openP = call('learn.openCard', { cardId: card.id });
+  const pre = VC.next && VC.next.cardId === card.id ? VC.next.bytes : Promise.resolve(null); VC.next = null;
+  const bytesP = pre.then(b => b || openP.then(o => fetchBytes(o.url)));
+  openP.catch(e => { clear(stage).append(h('p', { class: 'empty error' }, errText(e))); });
   let pdf;
   async function draw() {
     try {
       await loadScript(CDN.pdfjs);
       const lib = window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc = CDN.pdfWorker;
-      pdf ||= await lib.getDocument({ url: o.url, isEvalSupported: false }).promise;
+      pdf ||= await lib.getDocument({ data: new Uint8Array(await bytesP), isEvalSupported: false }).promise;
       const frag = document.createDocumentFragment(); const width = Math.max(260, stage.clientWidth - 2);
       for (let p = 1; p <= pdf.numPages; p++) {
         const page = await pdf.getPage(p); const base = page.getViewport({ scale: 1 });
@@ -278,8 +289,15 @@ async function viewerView(m, courseId, sectionId, idxStr) {
       clear(stage).append(frag);
     } catch (e) { console.error(e); clear(stage).append(h('p', { class: 'empty error' }, t('viewer.loadError'))); }
   }
-  draw();
-  let left = card.viewed ? 0 : o.seconds;
+  draw().then(() => {
+    // get the next card ready while this one is being read
+    const nx = list[idx + 1];
+    if (nx && location.hash.includes(`/viewer/${courseId}/${sectionId}/${idx}`)) {
+      // (opening it again when shown restarts its minimum-time clock, so this never shortens the wait)
+      VC.next = { cardId: nx.id, bytes: call('learn.openCard', { cardId: nx.id }).then(o => fetchBytes(o.url)).catch(() => null) };
+    }
+  });
+  let left = card.viewed ? 0 : (d.cardSeconds ?? 5);
   const tick = () => {
     if (left > 0) { timer.textContent = t('viewer.wait', { n: left }); nextBtn.disabled = true; left--; }
     else { timer.textContent = ''; nextBtn.disabled = false; clearInterval(iv); }
@@ -288,7 +306,7 @@ async function viewerView(m, courseId, sectionId, idxStr) {
   nextBtn.onclick = async () => {
     nextBtn.disabled = true;
     try {
-      if (!card.viewed) await call('learn.completeCard', { cardId: card.id });
+      if (!card.viewed) { await openP; await call('learn.completeCard', { cardId: card.id }); card.viewed = true; sec.viewed = Math.min(sec.cards, (sec.viewed || 0) + 1); }
       if (idx + 1 < list.length) go(`/viewer/${courseId}/${sectionId}/${idx + 1}`);
       else { toast(sec.hasQuiz ? t('viewer.doneQuiz') : t('viewer.done')); go('/course/' + courseId); }
     } catch (e) { if (e.code === 'too_fast') { left = e.extra.wait || 1; tick(); } else showError(e); nextBtn.disabled = false; }
