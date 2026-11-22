@@ -38,7 +38,7 @@ p{margin:.2em 0 .8em}
 .top-in{display:flex;align-items:center;gap:10px;max-width:1200px;margin:0 auto;padding:8px 16px}
 .mark{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-family:"Bebas Neue","Tajawal",sans-serif;font-size:24px;line-height:1;letter-spacing:.4px}
 :root:not([lang="en"]) .mark{font-family:"Tajawal",sans-serif;font-weight:800;font-size:19px}
-.mark img{border-radius:50%;background:#fff}
+.mark img{border-radius:50%;background:#fff;padding:3px;box-sizing:border-box}
 .spacer{flex:1}
 .toolbar{display:flex;gap:6px}
 .chip-btn{min-height:44px;min-width:44px;padding:0 10px;border-radius:999px;border:1.5px solid rgba(255,255,255,.55);background:transparent;color:#fff;font:700 14px "Tajawal",system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
@@ -134,7 +134,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .filters > *{flex:1 1 180px;width:auto}
 .login-hero{text-align:center;margin:12px 0 18px}
-.login-hero img{border-radius:50%;background:#fff;box-shadow:var(--shadow)}
+.login-hero img{width:160px;height:auto;border-radius:18px;background:#fff;padding:14px 18px;box-shadow:var(--shadow)}
 
 /* lists & tables */
 .list{display:flex;flex-direction:column;gap:8px}
