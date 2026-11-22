@@ -58,7 +58,7 @@ function navItems() {
 function renderChrome(active) {
   const top = document.getElementById('top'); clear(top);
   top.append(h('div', { class: 'top-in' },
-    h('a', { class: 'mark', href: '#/home', 'aria-label': t('app.name') }, h('img', { src: 'assets/logo.svg', alt: '', width: 36, height: 36 }), h('span', null, t('app.name'))),
+    h('a', { class: 'mark', href: '#/home', 'aria-label': t('app.name') }, h('img', { src: 'assets/logo-mark.png', alt: '', width: 36, height: 36 }), h('span', null, t('app.name'))),
     h('div', { class: 'spacer' }),
     h('div', { class: 'toolbar', role: 'group', 'aria-label': t('lang.choose') },
       LANGS.map(([code, label]) => h('button', { class: 'chip-btn', type: 'button', lang: code, 'aria-pressed': String(lang() === code), onclick: () => changeLang(code) }, label)),
@@ -165,7 +165,7 @@ function loginView(m) {
   const pw = input({ type: 'password', required: true, autocomplete: 'current-password' });
   const msg = h('div', { role: 'alert', class: 'form-msg' });
   const submit = h('button', { class: 'btn btn-primary btn-block', type: 'submit' }, t('login.go'));
-  m.append(h('div', { class: 'login-hero' }, h('img', { src: 'assets/logo.svg', alt: '', width: 84, height: 84 }), h('h1', null, t('login.title')), h('p', { class: 'lead' }, t('login.lead'))),
+  m.append(h('div', { class: 'login-hero' }, h('img', { src: 'assets/logo.png', alt: 'Shrimp Shack', width: 160, height: 124 }), h('h1', null, t('login.title')), h('p', { class: 'lead' }, t('login.lead'))),
     h('form', { class: 'card form narrow', onsubmit: async ev => {
       ev.preventDefault(); msg.textContent = ''; submit.disabled = true;
       try {
@@ -412,7 +412,7 @@ async function drawCertificate(c) {
   x.strokeStyle = '#F3D410'; x.lineWidth = 6; x.beginPath();
   for (let i = 0; i <= 30; i++) { const px = W / 2 - 300 + i * 20; x.arc(px, 330, 10, Math.PI, 0, i % 2 === 0); } x.stroke();
   x.textAlign = 'center'; x.fillStyle = '#005397';
-  try { const logo = new Image(); logo.src = 'assets/logo.svg'; await logo.decode(); x.drawImage(logo, W / 2 - 70, 100, 140, 140); } catch { /* ignore */ }
+  try { const logo = new Image(); logo.src = 'assets/logo.png'; await logo.decode(); const lw = 220, lh = lw * logo.naturalHeight / logo.naturalWidth; x.drawImage(logo, W / 2 - lw / 2, 82, lw, lh); } catch { /* ignore */ }
   x.font = '400 112px "Bebas Neue", sans-serif'; x.fillText(String(c.certTitle).toUpperCase(), W / 2, 300 + 110);
   x.fillStyle = '#5B6472'; x.font = '400 34px Lato, Tajawal, sans-serif'; x.fillText(c.businessName, W / 2, 480);
   x.fillStyle = '#1B2433'; x.font = '900 84px Lato, Tajawal, sans-serif'; x.fillText(c.name, W / 2, 610);
